@@ -1,10 +1,8 @@
 package codeplus.kata.springakkarunner.replays;
 
-import akka.actor.Cancellable;
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.DispatcherSelector;
-import akka.actor.typed.Terminated;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
@@ -47,25 +45,15 @@ class ReplayActor extends AbstractBehavior<Command> {
         return newReceiveBuilder().onMessage(StartReplay.class, this::onStartReplay)
             .onMessage(ExecuteReplayEvent.class, this::onReplayEvent)
             .onMessage(CancelReplay.class, this::onCancelReplay)
-            .onSignal(Terminated.class, this::onTerminate)
             .build();
 
     }
 
-    private Behavior<Command> onTerminate(Terminated terminated) {
-        if(kafkaActorRef.equals(terminated.getRef().unsafeUpcast())){
-            kafkaActorRef = null;
-            return Behaviors.stopped();
-        }
-        return this;
-    }
-
-
     private Behavior<Command> onCancelReplay(CancelReplay cancelReplay) {
-        if(kafkaActorRef != null) {
-            kafkaActorRef.tell(cancelReplay);
-        }
-        return this;
+//        if(kafkaActorRef != null) {
+//            kafkaActorRef.unsafeUpcast().tell(PoisonPill.instance());
+//        }
+        return Behaviors.stopped();
     }
 
     private Behavior<Command> onReplayEvent(ExecuteReplayEvent executeReplayEvent) {
@@ -89,7 +77,7 @@ class ReplayActor extends AbstractBehavior<Command> {
             DispatcherSelector.blocking());
 //            DispatcherSelector.fromConfig("kafka-producer-dispatcher"));
 
-        getContext().watch(kafkaActorRef);
+//        getContext().watch(kafkaActorRef);
 
         final List<ExecuteReplayEvent> eventsToReplay = startReplayCommand.getReplayEvents()
             .stream()
