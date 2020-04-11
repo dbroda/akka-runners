@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -64,7 +63,7 @@ public class SpringAkkaRunnerApplication {
                 List.of(
                     StartReplay.ReplayEvent.builder().eventType("event").id(replayID)
                         .messageToSend("event" + replayID + "-start")
-                        .originallyExecutedAt(LocalDateTime.of(2020, 4, 5, 10, 45, 0))
+                        .originallyExecutedAt(LocalDateTime.of(2020, 4, 5, 10, 40, 0))
                         .build()
                     ,
                     StartReplay.ReplayEvent.builder().eventType("event").id(replayID)
