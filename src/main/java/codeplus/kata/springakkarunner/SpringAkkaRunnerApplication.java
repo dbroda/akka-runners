@@ -26,10 +26,9 @@ public class SpringAkkaRunnerApplication {
     public void afterStart() {
 
 
-        studioComponent.startReplay(buildEvent(1L));
-//        studioComponent.startReplay(buildEvent(2L));
-//        studioComponent.startReplay(buildEvent(3L));
-//        studioComponent.startReplay(buildEvent(4L));
+        for(long i = 1;  i<10000L; i++) {
+            studioComponent.startReplay(buildEvent(i));
+        }
     }
 
     private StartReplay buildEvent(Long id) {
@@ -38,7 +37,7 @@ public class SpringAkkaRunnerApplication {
             .eventStartedAt(LocalDateTime.of(2020, 4, 5, 10, 45, 0))
             .minutesDelay(0)
             .replayID(replayID)
-            .speedRatio(2)
+            .speedRatio(1)
             .replayEvents(
                 List.of(
                     StartReplay.ReplayEvent.builder().eventType("event").id(replayID).messageToSend("event"+replayID+"-0")
@@ -46,10 +45,10 @@ public class SpringAkkaRunnerApplication {
                         .build()
                     ,
                     StartReplay.ReplayEvent.builder().eventType("event").id(replayID).messageToSend("event"+replayID+"-1")
-                        .originallyExecutedAt(LocalDateTime.of(2020, 4, 5, 10, 45, 30))
+                        .originallyExecutedAt(LocalDateTime.of(2020, 4, 5, 10, 45, 15))
                         .build(),
                     StartReplay.ReplayEvent.builder().eventType("event").id(replayID).messageToSend("event"+replayID+"-2")
-                        .originallyExecutedAt(LocalDateTime.of(2020, 4, 5, 10, 45, 33))
+                        .originallyExecutedAt(LocalDateTime.of(2020, 4, 5, 10, 45, 18))
                         .build(),
                     StartReplay.ReplayEvent.builder().eventType("event").id(replayID).messageToSend("event"+replayID+"-3")
                         .originallyExecutedAt(LocalDateTime.of(2020, 4, 5, 10, 46, 0))

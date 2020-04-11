@@ -49,7 +49,7 @@ class ReplayActor extends AbstractBehavior<Command> {
     }
 
     private Behavior<Command> onStartReplay(StartReplay startReplayCommand) {
-//        log.info("starting replay {} {}", this, startReplayCommand);
+        log.info("starting replay {} {}", this, startReplayCommand);
 
         final LocalDateTime now = LocalDateTime.now();
         final long timeOffsetInMillis = ChronoUnit.MILLIS
