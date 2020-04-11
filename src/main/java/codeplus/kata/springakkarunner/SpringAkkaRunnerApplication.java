@@ -4,6 +4,10 @@ import codeplus.kata.springakkarunner.replays.StartReplay;
 import codeplus.kata.springakkarunner.replays.StudioComponent;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -22,13 +26,31 @@ public class SpringAkkaRunnerApplication {
     @Autowired
     private StudioComponent studioComponent;
 
+    final AtomicLong i = new AtomicLong(0L);
+
+
+
+    private Supplier<Long> generateIds() {
+        return () -> {
+            try {
+                Thread.sleep(12000);
+            } catch (InterruptedException e) {
+
+                log.error("Interrupted!", e);
+            }
+            final var incrementAndGet = i.incrementAndGet();
+            log.info("Generating next event {}", incrementAndGet);
+            return incrementAndGet;
+        };
+    }
+
     @EventListener(classes = ApplicationReadyEvent.class)
     public void afterStart() {
 
-
-        for(long i = 1;  i<10000L; i++) {
-            studioComponent.startReplay(buildEvent(i));
-        }
+        Stream.generate(generateIds())
+            .map(this::buildEvent)
+            .limit(1)
+            .forEach(studioComponent::startReplay);
     }
 
     private StartReplay buildEvent(Long id) {
@@ -40,18 +62,27 @@ public class SpringAkkaRunnerApplication {
             .speedRatio(1)
             .replayEvents(
                 List.of(
-                    StartReplay.ReplayEvent.builder().eventType("event").id(replayID).messageToSend("event"+replayID+"-0")
+                    StartReplay.ReplayEvent.builder().eventType("event").id(replayID)
+                        .messageToSend("event" + replayID + "-start")
+                        .originallyExecutedAt(LocalDateTime.of(2020, 4, 5, 10, 45, 0))
+                        .build()
+                    ,
+                    StartReplay.ReplayEvent.builder().eventType("event").id(replayID)
+                        .messageToSend("event" + replayID + "-0")
                         .originallyExecutedAt(LocalDateTime.of(2020, 4, 5, 10, 45, 10))
                         .build()
                     ,
-                    StartReplay.ReplayEvent.builder().eventType("event").id(replayID).messageToSend("event"+replayID+"-1")
+                    StartReplay.ReplayEvent.builder().eventType("event").id(replayID)
+                        .messageToSend("event" + replayID + "-1")
                         .originallyExecutedAt(LocalDateTime.of(2020, 4, 5, 10, 45, 15))
                         .build(),
-                    StartReplay.ReplayEvent.builder().eventType("event").id(replayID).messageToSend("event"+replayID+"-2")
+                    StartReplay.ReplayEvent.builder().eventType("event").id(replayID)
+                        .messageToSend("event" + replayID + "-2")
                         .originallyExecutedAt(LocalDateTime.of(2020, 4, 5, 10, 45, 18))
                         .build(),
-                    StartReplay.ReplayEvent.builder().eventType("event").id(replayID).messageToSend("event"+replayID+"-3")
-                        .originallyExecutedAt(LocalDateTime.of(2020, 4, 5, 10, 46, 0))
+                    StartReplay.ReplayEvent.builder().eventType("event").id(replayID)
+                        .messageToSend("event" + replayID + "-3")
+                        .originallyExecutedAt(LocalDateTime.of(2020, 4, 5, 10, 45, 30))
                         .build()
 
                 )

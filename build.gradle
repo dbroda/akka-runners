@@ -8,6 +8,13 @@ group = 'codeplus.kata'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '14'
 
+compileJava {
+	options.compilerArgs += ["--enable-preview"]
+}
+test {
+	jvmArgs '--enable-preview'
+}
+
 repositories {
 	mavenCentral()
 }

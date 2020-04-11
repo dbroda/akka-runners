@@ -1,10 +1,15 @@
 package codeplus.kata.springakkarunner.replays;
 
+import akka.actor.Cancellable;
+import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
+import akka.actor.typed.DispatcherSelector;
+import akka.actor.typed.Terminated;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
+import codeplus.kata.springakkarunner.replays.KafkaProducerActor.SendToKafka;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -16,6 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 class ReplayActor extends AbstractBehavior<Command> {
+
+    private ActorRef<Command> kafkaActorRef;
 
     @Builder
     @Value
@@ -39,12 +46,30 @@ class ReplayActor extends AbstractBehavior<Command> {
     public Receive<Command> createReceive() {
         return newReceiveBuilder().onMessage(StartReplay.class, this::onStartReplay)
             .onMessage(ExecuteReplayEvent.class, this::onReplayEvent)
+            .onMessage(CancelReplay.class, this::onCancelReplay)
+            .onSignal(Terminated.class, this::onTerminate)
             .build();
 
     }
 
+    private Behavior<Command> onTerminate(Terminated terminated) {
+        if(kafkaActorRef.equals(terminated.getRef().unsafeUpcast())){
+            kafkaActorRef = null;
+        }
+        return this;
+    }
+
+
+    private Behavior<Command> onCancelReplay(CancelReplay cancelReplay) {
+        if(kafkaActorRef != null) {
+            kafkaActorRef.tell(cancelReplay);
+        }
+        return this;
+    }
+
     private Behavior<Command> onReplayEvent(ExecuteReplayEvent executeReplayEvent) {
-        log.info("{}, {}, Executing event {}", this, this.getContext().getSelf(), executeReplayEvent);
+        log.info("{}, {}, Executing event {}", this, this.getContext().getSelf(),
+            executeReplayEvent);
         return this;
     }
 
@@ -58,6 +83,13 @@ class ReplayActor extends AbstractBehavior<Command> {
         final LocalDateTime localDateTime = ChronoUnit.MILLIS
             .addTo(startReplayCommand.getEventStartedAt(), timeOffsetInMillis);
 
+         kafkaActorRef = getContext().spawn(KafkaProducerActor.create(),
+            "kafka-producer-" + startReplayCommand.getReplayID(),
+            DispatcherSelector.blocking());
+
+         getContext().watch(kafkaActorRef);
+//            DispatcherSelector.fromConfig("kafka-producer-dispatcher"));
+
         final List<ExecuteReplayEvent> eventsToReplay = startReplayCommand.getReplayEvents()
             .stream()
             .map(x -> ExecuteReplayEvent.builder()
@@ -70,15 +102,15 @@ class ReplayActor extends AbstractBehavior<Command> {
 
         log.info("starting replay {} {}", this, eventsToReplay);
 
-
-
         eventsToReplay.stream()
             .forEach(e ->
                 {
                     final Duration delay = Duration.between(now, e.executeAt);
                     final Duration finalDelay = delay.dividedBy(startReplayCommand.getSpeedRatio());
-                    log.info("actor {}, ref {}, delay {}, finalDelay {}", this, this.getContext().getSelf(), delay, finalDelay);
-                    getContext().scheduleOnce(finalDelay, this.getContext().getSelf(), e);
+                    log.info("actor {}, ref {}, delay {}, finalDelay {}", this,
+                        this.getContext().getSelf(), delay, finalDelay);
+                    getContext().scheduleOnce(finalDelay, kafkaActorRef, new SendToKafka(e.getEvent()));
+
 
                 }
             );
