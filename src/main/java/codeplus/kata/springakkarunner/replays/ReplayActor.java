@@ -1,6 +1,5 @@
 package codeplus.kata.springakkarunner.replays;
 
-import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
 import akka.actor.typed.DispatcherSelector;
 import akka.actor.typed.javadsl.AbstractBehavior;
@@ -19,8 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 class ReplayActor extends AbstractBehavior<Command> {
-
-    private ActorRef<Command> kafkaActorRef;
 
     @Builder
     @Value
@@ -43,23 +40,14 @@ class ReplayActor extends AbstractBehavior<Command> {
     @Override
     public Receive<Command> createReceive() {
         return newReceiveBuilder().onMessage(StartReplay.class, this::onStartReplay)
-            .onMessage(ExecuteReplayEvent.class, this::onReplayEvent)
             .onMessage(CancelReplay.class, this::onCancelReplay)
             .build();
 
     }
 
     private Behavior<Command> onCancelReplay(CancelReplay cancelReplay) {
-//        if(kafkaActorRef != null) {
-//            kafkaActorRef.unsafeUpcast().tell(PoisonPill.instance());
-//        }
-        return Behaviors.stopped();
-    }
 
-    private Behavior<Command> onReplayEvent(ExecuteReplayEvent executeReplayEvent) {
-        log.info("{}, {}, Executing event {}", this, this.getContext().getSelf(),
-            executeReplayEvent);
-        return this;
+        return Behaviors.stopped();
     }
 
     private Behavior<Command> onStartReplay(StartReplay startReplayCommand) {
@@ -69,15 +57,9 @@ class ReplayActor extends AbstractBehavior<Command> {
         final long timeOffsetInMillis = ChronoUnit.MILLIS
             .between(startReplayCommand.getEventStartedAt(), now);
 
-        final LocalDateTime localDateTime = ChronoUnit.MILLIS
-            .addTo(startReplayCommand.getEventStartedAt(), timeOffsetInMillis);
-
-         kafkaActorRef = getContext().spawn(KafkaProducerActor.create(),
+        final var kafkaActorRef = getContext().spawn(KafkaProducerActor.create(),
             "kafka-producer-" + startReplayCommand.getReplayID(),
             DispatcherSelector.blocking());
-//            DispatcherSelector.fromConfig("kafka-producer-dispatcher"));
-
-//        getContext().watch(kafkaActorRef);
 
         final List<ExecuteReplayEvent> eventsToReplay = startReplayCommand.getReplayEvents()
             .stream()

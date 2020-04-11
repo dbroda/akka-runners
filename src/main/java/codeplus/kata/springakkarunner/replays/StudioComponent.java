@@ -48,7 +48,6 @@ public class StudioComponent {
 
         private Behavior<Command> onCancelReplay(CancelReplay cancelReplay) {
             log.info("Canceling replay {}", cancelReplay);
-//            akka://replays-studio/user/
 
             final Optional<ActorRef<Void>> refOptional = getContext()
                 .getChild("replay-actor-" + cancelReplay.getReplayId());
