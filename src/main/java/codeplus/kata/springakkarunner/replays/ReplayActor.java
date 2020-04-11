@@ -55,6 +55,7 @@ class ReplayActor extends AbstractBehavior<Command> {
     private Behavior<Command> onTerminate(Terminated terminated) {
         if(kafkaActorRef.equals(terminated.getRef().unsafeUpcast())){
             kafkaActorRef = null;
+            return Behaviors.stopped();
         }
         return this;
     }
@@ -86,9 +87,9 @@ class ReplayActor extends AbstractBehavior<Command> {
          kafkaActorRef = getContext().spawn(KafkaProducerActor.create(),
             "kafka-producer-" + startReplayCommand.getReplayID(),
             DispatcherSelector.blocking());
-
-         getContext().watch(kafkaActorRef);
 //            DispatcherSelector.fromConfig("kafka-producer-dispatcher"));
+
+        getContext().watch(kafkaActorRef);
 
         final List<ExecuteReplayEvent> eventsToReplay = startReplayCommand.getReplayEvents()
             .stream()

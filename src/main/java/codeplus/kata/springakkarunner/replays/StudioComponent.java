@@ -3,11 +3,11 @@ package codeplus.kata.springakkarunner.replays;
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.ActorSystem;
 import akka.actor.typed.Behavior;
-import akka.actor.typed.internal.PoisonPill;
 import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -50,10 +50,14 @@ public class StudioComponent {
             log.info("Canceling replay {}", cancelReplay);
 //            akka://replays-studio/user/
 
-            getContext().getChild("replay-actor-" + cancelReplay.getReplayId())
-                .ifPresent(ref -> {
-                    ref.unsafeUpcast().tell(cancelReplay);
-                });
+            final Optional<ActorRef<Void>> refOptional = getContext()
+                .getChild("replay-actor-" + cancelReplay.getReplayId());
+            if (refOptional.isPresent()) {
+                refOptional.get().unsafeUpcast().tell(cancelReplay);
+            } else {
+                log.warn("There is no replay {} to cancel", cancelReplay);
+            }
+
             return this;
         }
 

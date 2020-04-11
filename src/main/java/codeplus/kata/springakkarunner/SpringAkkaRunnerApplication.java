@@ -49,7 +49,7 @@ public class SpringAkkaRunnerApplication {
 
         Stream.generate(generateIds())
             .map(this::buildEvent)
-            .limit(1)
+//            .limit(1)
             .forEach(studioComponent::startReplay);
     }
 
