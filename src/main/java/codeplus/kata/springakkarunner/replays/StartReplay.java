@@ -6,9 +6,9 @@ import java.util.UUID;
 import lombok.Builder;
 import lombok.Value;
 
-@Builder
+@Builder(toBuilder = true)
 @Value
-public class StartReplay {
+public class StartReplay implements Command {
 
     private final UUID correlationID = UUID.randomUUID();
     private Long eventID;
@@ -18,7 +18,7 @@ public class StartReplay {
     private int minutesDelay;
     private List<ReplayEvent> replayEvents;
 
-    @Builder
+    @Builder(toBuilder = true)
     @Value
     public static class ReplayEvent {
 
